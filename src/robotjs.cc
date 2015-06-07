@@ -7,12 +7,13 @@
 #include "keypress.h"
 #include "screen.h"
 #include "screengrab.h"
+#include "windows.h"
 #include "MMBitmap.h"
 
 using namespace v8;
 
 /*
- __  __                      
+ __  __					  
 |  \/  | ___  _   _ ___  ___ 
 | |\/| |/ _ \| | | / __|/ _ \
 | |  | | (_) | |_| \__ \  __/
@@ -159,12 +160,12 @@ NAN_METHOD(mouseToggle)
 }
 
 /*
- _  __          _                         _ 
+ _  __		  _						 _ 
 | |/ /___ _   _| |__   ___   __ _ _ __ __| |
 | ' // _ \ | | | '_ \ / _ \ / _` | '__/ _` |
 | . \  __/ |_| | |_) | (_) | (_| | | | (_| |
 |_|\_\___|\__, |_.__/ \___/ \__,_|_|  \__,_|
-          |___/           
+		  |___/		   
 */
 
 int CheckKeyCodes(char* k, MMKeyCode *key) 
@@ -257,27 +258,27 @@ int CheckKeyFlags(char* f, MMKeyFlags* flags)
 
 	if (strcmp(f, "alt") == 0) 
 	{
-    	*flags = MOD_ALT;
+		*flags = MOD_ALT;
   	}
   	else if(strcmp(f, "command") == 0) 
 	{
-    	*flags = MOD_META;
+		*flags = MOD_META;
   	}
   	else if(strcmp(f, "control") == 0) 
 	{
-    	*flags = MOD_CONTROL;
+		*flags = MOD_CONTROL;
   	}
   	else if(strcmp(f, "shift") == 0) 
 	{
-    	*flags = MOD_SHIFT;
+		*flags = MOD_SHIFT;
 	}
 	else if(strcmp(f, "none") == 0) 
 	{
-    	*flags = MOD_NONE;
+		*flags = MOD_NONE;
   	}
  	else 
 	{
-    	return -2;
+		return -2;
   	}
 
 	return 0;
@@ -324,14 +325,14 @@ NAN_METHOD(keyTap)
   	if (f) 
 	{
 		switch(CheckKeyFlags(f, &flags)) 
-    	{
+		{
 			case -1:
 				return NanThrowError("Null pointer in key flag.");
-        		break;
+				break;
 			case -2:
 				return NanThrowError("Invalid key flag specified."); 
-        		break;
-    	}
+				break;
+		}
 	}
 
 	switch(CheckKeyCodes(k, &key)) 
@@ -370,13 +371,13 @@ NAN_METHOD(keyToggle)
 
 	switch (args.Length()) 
 	{
-    	case 3:
-      		break;
-    	case 2:
-      		f = NULL;
-      		break;
-    	default:
-      		return NanThrowError("Invalid number of arguments.");
+		case 3:
+	  		break;
+		case 2:
+	  		f = NULL;
+	  		break;
+		default:
+	  		return NanThrowError("Invalid number of arguments.");
 	}
 
 	if (f) 
@@ -384,25 +385,25 @@ NAN_METHOD(keyToggle)
 		switch(CheckKeyFlags(f, &flags)) 
 		{
 			case -1:
-        		return NanThrowError("Null pointer in key flag.");
-        		break;
+				return NanThrowError("Null pointer in key flag.");
+				break;
 			case -2:
-        		return NanThrowError("Invalid key flag specified."); 
-        		break;
+				return NanThrowError("Invalid key flag specified."); 
+				break;
 		}
 	}
 
 	switch(CheckKeyCodes(k, &key)) 
 	{
 		case -1:
-    		return NanThrowError("Null pointer in key code.");
+			return NanThrowError("Null pointer in key code.");
 			break;
 		case -2:
 			return NanThrowError("Invalid key code specified."); 
 			break;
 		default:
 			toggleKeyCode(key, down, flags);
-      		mssleep(10);
+	  		mssleep(10);
 	}
 
 	NanReturnValue(NanNew("1"));
@@ -423,12 +424,12 @@ NAN_METHOD(typeString)
 }
 
 /*
-  ____                           
+  ____						   
  / ___|  ___ _ __ ___  ___ _ __  
  \___ \ / __| '__/ _ \/ _ \ '_ \ 
   ___) | (__| | |  __/  __/ | | |
  |____/ \___|_|  \___|\___|_| |_|
-                                 
+								 
 */
 
 NAN_METHOD(getPixelColor) 
@@ -472,6 +473,42 @@ NAN_METHOD(getScreenSize)
 	NanReturnValue(obj);
 }
 
+// WINDOWS
+//
+NAN_METHOD(getWindowList)
+{
+	NanScope();
+
+	WindowDescriptionList* windows = getWindowList();
+
+	if (windows == NULL || windows->items == NULL) {
+		NanReturnUndefined();
+	}
+
+	Local<Array> array = NanNew<Array>();
+	WindowDescriptionRef* currentWindow = windows->items;
+	for (int i=0; i<windows->count; i++) {
+		Local<Object> obj = NanNew<Object>();
+		WindowDescriptionRef window = *currentWindow;
+
+		if (window->name == NULL) {
+			obj->Set(NanNew<String>("name"), NanNull());
+		} else {
+			obj->Set(NanNew<String>("name"), NanNew(window->name));
+		}
+
+		obj->Set(NanNew<String>("id"), NanNew<Number>(window->id));
+		obj->Set(NanNew<String>("pid"), NanNew<Number>(window->pid));
+
+		array->Set(i, obj);
+
+		currentWindow++;
+	}
+
+
+	NanReturnValue(array);
+}
+
 void init(Handle<Object> target) 
 {
 
@@ -504,6 +541,9 @@ void init(Handle<Object> target)
 
 	target->Set(NanNew<String>("getScreenSize"),
 		NanNew<FunctionTemplate>(getScreenSize)->GetFunction());
+
+	target->Set(NanNew<String>("getWindowList"),
+		NanNew<FunctionTemplate>(getWindowList)->GetFunction());
 
 }
 

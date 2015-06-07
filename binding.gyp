@@ -55,6 +55,7 @@
       'src/keycode.c',
       'src/screen.c',
       'src/screengrab.c',
+      'src/windows.c',
       'src/MMBitmap.c'
     ]
   }]
